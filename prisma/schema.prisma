@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Fazenda {
+  id        String      @id @default(cuid())
+  nome      String
+  talhoes   Talhao[]
+  colheitas Colheita[]
+  adubacoes Adubacao[]
+  herbicidas Herbicida[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Talhao {
+  id              String            @id @default(cuid())
+  nome            String
+  tamanhoHectares Float
+  observacoes     String?
+  fazendaId       String
+  fazenda         Fazenda           @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
+  adubacaoTalhoes AdubacaoTalhao[]
+  herbicidaTalhoes HerbicidaTalhao[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([fazendaId])
+}
+
+model Colheita {
+  id                        String     @id @default(cuid())
+  data                      DateTime
+  toneladas                 Float
+  precoPorTonelada          Float      @default(0)
+  agio                      Float      @default(0)
+  ctc                       Float      @default(0)
+  plantioUsina              Float      @default(0)
+  areaTarefasContrato       Float      @default(0)
+  contratoToneladasPorTarefa Float     @default(0)
+  outrasDespesas            Float      @default(0)
+  fazendaId                 String
+  fazenda                   Fazenda    @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
+  adubacao                  Adubacao?
+  herbicida                 Herbicida?
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+
+  @@index([fazendaId])
+  @@index([data])
+}
+
+model Adubacao {
+  id                 String        @id @default(cuid())
+  colheitaId         String        @unique
+  colheita           Colheita      @relation(fields: [colheitaId], references: [id], onDelete: Cascade)
+  fazendaId          String
+  fazenda            Fazenda       @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
+  doseSacosPorTarefa Float         @default(3)
+  pesoSacoKg         Float         @default(50)
+  precoTonelada      Float         @default(0)
+  talhoes            AdubacaoTalhao[]
+
+  @@index([fazendaId])
+}
+
+model AdubacaoTalhao {
+  id          String   @id @default(cuid())
+  adubacaoId  String
+  adubacao    Adubacao @relation(fields: [adubacaoId], references: [id], onDelete: Cascade)
+  talhaoId    String
+  talhao      Talhao   @relation(fields: [talhaoId], references: [id], onDelete: Cascade)
+  abrangencia String   @default("total")
+  areaTarefas Float
+
+  @@index([adubacaoId])
+  @@index([talhaoId])
+}
+
+model Herbicida {
+  id             String             @id @default(cuid())
+  colheitaId     String             @unique
+  colheita       Colheita           @relation(fields: [colheitaId], references: [id], onDelete: Cascade)
+  fazendaId      String
+  fazenda        Fazenda            @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
+  custoAplicacao Float              @default(0)
+  outrosCustos   Float              @default(0)
+  talhoes        HerbicidaTalhao[]
+  produtos       HerbicidaProduto[]
+
+  @@index([fazendaId])
+}
+
+model HerbicidaTalhao {
+  id          String    @id @default(cuid())
+  herbicidaId String
+  herbicida   Herbicida @relation(fields: [herbicidaId], references: [id], onDelete: Cascade)
+  talhaoId    String
+  talhao      Talhao    @relation(fields: [talhaoId], references: [id], onDelete: Cascade)
+  abrangencia String    @default("total")
+  areaTarefas Float
+
+  @@index([herbicidaId])
+  @@index([talhaoId])
+}
+
+model HerbicidaProduto {
+  id            String    @id @default(cuid())
+  herbicidaId   String
+  herbicida     Herbicida @relation(fields: [herbicidaId], references: [id], onDelete: Cascade)
+  nome          String
+  quantidade    Float
+  unidade       String
+  precoUnitario Float     @default(0)
+
+  @@index([herbicidaId])
+}
