@@ -112,6 +112,17 @@ async function fazendaExists(id: string) {
   return (await prisma.fazenda.count({ where: { id } })) > 0;
 }
 
+function validateFaseFazenda(
+  colheitaFazendaId: string,
+  faseNome: "adubação" | "herbicida",
+  faseFazendaId?: string
+): string | null {
+  if (faseFazendaId && faseFazendaId !== colheitaFazendaId) {
+    return `A ${faseNome} deve pertencer à mesma fazenda da colheita.`;
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Fazendas                                                             */
 /* ------------------------------------------------------------------ */
@@ -173,6 +184,9 @@ export async function createTalhao(
     fazendaId: textField(formData, "fazendaId"),
   });
   if (!parsed.success) return { success: false, message: schemaError(parsed.error) };
+  if (!(await fazendaExists(parsed.data.fazendaId))) {
+    return { success: false, message: "Fazenda não encontrada." };
+  }
 
   const talhao = await prisma.talhao.create({
     data: {
@@ -301,6 +315,13 @@ export async function createColheita(
   if (herbicidaParsed && !herbicidaParsed.success)
     return { success: false, message: schemaError(herbicidaParsed.error) };
 
+  const erroFase = validateFaseFazenda(
+    parsed.data.fazendaId,
+    "adubação",
+    adubacaoParsed?.data?.fazendaId
+  );
+  if (erroFase) return { success: false, message: erroFase };
+
   if (adubacaoParsed?.data) {
     const normalized = await normalizeTalhoesFinanceiros(
       "adubação",
@@ -407,6 +428,9 @@ export async function updateColheita(
     select: { fazendaId: true },
   });
   if (!previous) return { success: false, message: "Colheita não encontrada." };
+  if (!(await fazendaExists(parsed.data.fazendaId))) {
+    return { success: false, message: "Fazenda não encontrada." };
+  }
 
   const adubacaoRaw = jsonField<unknown>(formData, "adubacao");
   const herbicidaRaw = jsonField<unknown>(formData, "herbicida");
@@ -417,6 +441,13 @@ export async function updateColheita(
     return { success: false, message: schemaError(adubacaoParsed.error) };
   if (herbicidaParsed && !herbicidaParsed.success)
     return { success: false, message: schemaError(herbicidaParsed.error) };
+
+  const erroFase = validateFaseFazenda(
+    parsed.data.fazendaId,
+    "adubação",
+    adubacaoParsed?.data?.fazendaId
+  );
+  if (erroFase) return { success: false, message: erroFase };
 
   if (adubacaoParsed?.data) {
     const normalized = await normalizeTalhoesFinanceiros(

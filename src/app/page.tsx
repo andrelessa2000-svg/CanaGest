@@ -122,7 +122,7 @@ export default async function DashboardPage() {
           <EmptyState
             icon={SproutIcon}
             title="Nenhuma colheita registrada"
-            description="Registre a primeira colheita de um talhão para acompanhar a produção e os resultados."
+            description="Registre a primeira colheita da safra para acompanhar a produção e os resultados financeiros."
             action={
               <Button asChild>
                 <Link href="/colheitas/nova">

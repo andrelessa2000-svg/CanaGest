@@ -80,14 +80,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <InstallAppButton />
           <p className="px-2 pt-0.5 text-[11px] text-muted-foreground">
-            Dados salvos localmente no seu dispositivo.
+            Seus dados ficam salvos na nuvem.
           </p>
         </div>
       </aside>
 
       {/* Mobile top bar */}
       <header
-        style={{ viewTransitionName: "site-header" }}
         className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border/70 bg-background/85 px-4 backdrop-blur-xl md:hidden"
       >
         <Link href="/" aria-label="CanaGest – Início">
@@ -108,7 +107,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Desktop header (right zone) */}
       <header
-        style={{ viewTransitionName: "site-header" }}
         className="fixed top-0 right-0 z-40 hidden h-14 items-center justify-between border-b border-border/70 bg-background/70 px-6 backdrop-blur-xl md:flex md:left-64"
       >
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
