@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="md:pl-64">
-        <div className="mx-auto max-w-5xl px-4 pt-6 pb-28 sm:px-6 md:pt-10 md:pb-16">
+        <div className="mx-auto max-w-5xl px-4 pt-6 pb-28 sm:px-6 md:pt-20 md:pb-16">
           {children}
         </div>
       </div>
