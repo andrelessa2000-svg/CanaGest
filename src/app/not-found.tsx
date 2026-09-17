@@ -1,29 +1,23 @@
 import Link from "next/link";
-import { CompassIcon, HomeIcon } from "lucide-react";
+import { FileQuestion } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
-import { Button } from "@/components/ui/button";
-
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
-    <div className="mx-auto flex min-h-[60svh] max-w-md flex-col items-center justify-center text-center">
-      <div className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-        <CompassIcon className="size-8" />
+    <>
+      <PageHeader
+        rotulo="erro 404"
+        titulo="Página não encontrada"
+        descricao="O registro ou a página que você procura não existe mais."
+      />
+      <div className="grid place-items-center gap-4 py-10 text-center">
+        <span className="grid size-14 place-items-center rounded-[10px] bg-accent-soft text-accent">
+          <FileQuestion className="size-7" strokeWidth={1.8} />
+        </span>
+        <Link href="/" className="btn btn-primary">
+          Voltar ao início
+        </Link>
       </div>
-      <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
-        Página não encontrada
-      </h1>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        O conteúdo que você procura não existe ou foi movido. Verifique o endereço ou volte para o
-        início.
-      </p>
-      <div className="mt-8 flex flex-col gap-2 sm:flex-row">
-        <Button asChild>
-          <Link href="/">
-            <HomeIcon className="size-4" />
-            Ir para o início
-          </Link>
-        </Button>
-      </div>
-    </div>
+    </>
   );
 }

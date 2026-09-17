@@ -1,52 +1,41 @@
-import type { Metadata } from "next";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, MapPinnedIcon } from "lucide-react";
-
-import { createTalhao } from "@/lib/actions";
 import { prisma } from "@/lib/db";
+import { criarTalhao } from "@/lib/actions";
+import { PageHeader } from "@/components/page-header";
 import { TalhaoForm } from "@/components/talhao-form";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
-type Params = Promise<{ id: string }>;
+export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Novo talhão | CanaGest",
-};
-
-export default async function NovoTalhaoPage({ params }: { params: Params }) {
+export default async function NovoTalhaoPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const fazenda = await prisma.fazenda.findUnique({ where: { id } });
+  const fazenda = await prisma.fazenda.findUnique({
+    where: { id },
+    select: { id: true, nome: true },
+  });
   if (!fazenda) notFound();
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div className="flex items-center gap-2">
-        <Button asChild variant="ghost" size="icon-sm" className="-ml-2">
-          <Link href={`/fazendas/${fazenda.id}`} transitionTypes={["nav-back"]} aria-label="Voltar">
-            <ArrowLeftIcon className="size-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-tight text-foreground">
-            <MapPinnedIcon className="size-5 text-primary" />
-            Novo talhão
-          </h1>
-          <p className="text-sm text-muted-foreground">Cadastre uma área na fazenda {fazenda.nome}.</p>
-        </div>
+    <>
+      <Link
+        href={`/fazendas/${id}`}
+        className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ink-3 hover:text-ink"
+      >
+        <ChevronLeft className="size-4" /> {fazenda.nome}
+      </Link>
+      <PageHeader
+        rotulo="cadastro"
+        titulo="Novo talhão"
+        descricao="Identifique a área plantada dentro desta fazenda."
+      />
+      <div className="mx-auto max-w-xl rounded-[10px] border border-line bg-surface p-5 sm:p-8">
+        <TalhaoForm acao={criarTalhao.bind(null, id)} nomeFazenda={fazenda.nome} />
       </div>
-
-      <Card>
-        <CardContent>
-          <TalhaoForm
-            action={createTalhao}
-            fazendaId={fazenda.id}
-            fazendaNome={fazenda.nome}
-            submitLabel="Cadastrar talhão"
-          />
-        </CardContent>
-      </Card>
-    </div>
+    </>
   );
 }

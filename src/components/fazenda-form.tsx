@@ -1,68 +1,76 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2Icon, PlusIcon, SaveIcon } from "lucide-react";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Field } from "@/components/field";
-import type { ActionResult } from "@/lib/actions";
+import { useActionState } from "react";
+import type { ActionState } from "@/lib/actions";
+import { AlertaFormulario, BotaoSubmit, Campo } from "./forms";
 
 export function FazendaForm({
-  action,
-  initial,
-  submitLabel = "Salvar fazenda",
+  acao,
+  inicial,
 }: {
-  action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
-  initial?: { id: string; nome: string };
-  submitLabel?: string;
+  acao: (prev: ActionState | undefined, formData: FormData) => Promise<ActionState>;
+  inicial?: { nome: string; cidade: string; uf: string; area: number };
 }) {
-  const router = useRouter();
-  const [state, formAction, pending] = useActionState(action, {
-    success: false,
-  });
-
-  useEffect(() => {
-    if (state.success) {
-      toast.success("Fazenda salva com sucesso.");
-      router.push(state.redirectTo ?? "/fazendas");
-    } else if (state.message) {
-      toast.error(state.message);
-    }
-  }, [state, router]);
+  const [state, acaoForm] = useActionState(acao, undefined);
 
   return (
-    <form action={formAction} className="space-y-5">
-      {initial?.id && <input type="hidden" name="id" value={initial.id} />}
-      <Field
-        label="Nome da fazenda"
-        hint="Ex.: Fazenda Santa Clara"
-        error={!state.success && state.message ? state.message : undefined}
-      >
-        <Input
-          name="nome"
-          autoFocus
-          required
-          maxLength={120}
-          defaultValue={initial?.nome ?? ""}
-          placeholder="Qual o nome da fazenda?"
-          className="h-11 text-base"
-        />
-      </Field>
+    <form action={acaoForm} className="grid gap-5 pb-4">
+      <AlertaFormulario mensagem={state && !state.ok ? state.error : undefined} />
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="submit" disabled={pending} className="h-10 px-5">
-          {pending ? (
-            <Loader2Icon className="size-4 animate-spin" />
-          ) : initial?.id ? (
-            <SaveIcon className="size-4" />
-          ) : (
-            <PlusIcon className="size-4" />
-          )}
-          {submitLabel}
-        </Button>
+      <Campo label="Nome da fazenda" htmlFor="nome">
+        <input
+          id="nome"
+          name="nome"
+          className="field-input"
+          defaultValue={inicial?.nome}
+          required
+          autoFocus
+          maxLength={80}
+          placeholder="Ex.: Fazenda Boa Vista"
+        />
+      </Campo>
+
+      <div className="grid grid-cols-[1fr_5.5rem] gap-4">
+        <Campo label="Cidade" htmlFor="cidade">
+          <input
+            id="cidade"
+            name="cidade"
+            className="field-input"
+            defaultValue={inicial?.cidade}
+            maxLength={60}
+            placeholder="Ex.: Morro Agudo"
+          />
+        </Campo>
+        <Campo label="UF" htmlFor="uf">
+          <input
+            id="uf"
+            name="uf"
+            className="field-input uppercase"
+            defaultValue={inicial?.uf}
+            maxLength={2}
+            placeholder="SP"
+          />
+        </Campo>
+      </div>
+
+      <Campo
+        label="Área total (ha)"
+        htmlFor="area"
+        hint="Hectares. Aceita vírgula como decimal."
+      >
+        <input
+          id="area"
+          name="area"
+          className="field-input tnum"
+          defaultValue={inicial ? String(inicial.area).replace(".", ",") : undefined}
+          inputMode="decimal"
+          required
+          placeholder="Ex.: 320,5"
+        />
+      </Campo>
+
+      <div className="flex justify-end">
+        <BotaoSubmit>{inicial ? "Salvar alterações" : "Cadastrar fazenda"}</BotaoSubmit>
       </div>
     </form>
   );

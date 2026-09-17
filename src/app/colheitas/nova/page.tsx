@@ -1,38 +1,59 @@
-import type { Metadata } from "next";
-import { TruckIcon } from "lucide-react";
-
-import { createColheita } from "@/lib/actions";
-import { getFazendaOptions } from "@/lib/queries";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { criarColheita } from "@/lib/actions";
+import { PageHeader } from "@/components/page-header";
 import { ColheitaForm } from "@/components/colheita-form";
 
-type SearchParams = Promise<{ fazenda?: string }>;
+export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Nova colheita | CanaGest",
-};
+export default async function NovaColheitaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ talhao?: string }>;
+}) {
+  const [{ talhao }, talhoes] = await Promise.all([
+    searchParams,
+    prisma.talhao.findMany({
+      select: {
+        id: true,
+        nome: true,
+        areaHa: true,
+        fazenda: { select: { nome: true } },
+      },
+      orderBy: [{ fazenda: { nome: "asc" } }, { nome: "asc" }],
+    }),
+  ]);
 
-export default async function NovaColheitaPage({ searchParams }: { searchParams: SearchParams }) {
-  const { fazenda } = await searchParams;
-  const fazendas = await getFazendaOptions();
+  const talhaoPreselecionado = talhoes.some((t) => t.id === talhao)
+    ? talhao
+    : undefined;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-tight text-foreground md:text-2xl">
-          <TruckIcon className="size-6 text-primary" />
-          Nova colheita
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Registre a produção da fazenda e o resumo financeiro é calculado na hora.
-        </p>
-      </div>
-
-      <ColheitaForm
-        action={createColheita}
-        fazendas={fazendas}
-        preselectedFazendaId={fazenda}
-        submitLabel="Registrar colheita"
+    <>
+      <Link
+        href="/colheitas"
+        className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ink-3 hover:text-ink"
+      >
+        <ChevronLeft className="size-4" /> Colheitas
+      </Link>
+      <PageHeader
+        rotulo="safra"
+        titulo="Nova colheita"
+        descricao="Registre o que foi colhido e anote as condições do dia."
       />
-    </div>
+      <div className="mx-auto max-w-xl rounded-[10px] border border-line bg-surface p-5 sm:p-8">
+        <ColheitaForm
+          acao={criarColheita}
+          talhoes={talhoes.map((t) => ({
+            id: t.id,
+            nome: t.nome,
+            fazendaNome: t.fazenda.nome,
+            areaHa: t.areaHa,
+          }))}
+          talhaoSelecionado={talhaoPreselecionado}
+        />
+      </div>
+    </>
   );
 }

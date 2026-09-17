@@ -1,175 +1,99 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2Icon, PlusIcon, SaveIcon } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "cn";
+import { useActionState } from "react";
+import type { ActionState } from "@/lib/actions";
+import { AlertaFormulario, BotaoSubmit, Campo } from "./forms";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Field } from "@/components/field";
-import { SuffixedNumberInput, toInputString } from "@/components/number-inputs";
-import type { ActionResult } from "@/lib/actions";
-import {
-  AREA_UNITS,
-  AreaUnit,
-  formatTarefas,
-  haToTarefas,
-  tarefasToHa,
-} from "@/lib/area";
-import { formatHectares } from "@/lib/format";
-import { parseDecimal } from "@/lib/parse-decimal";
+const VARIEDADES = [
+  "RB 867515",
+  "RB 966928",
+  "RB 72454",
+  "SP 80-1842",
+  "SP 81-3250",
+  "CTC 4",
+  "CTC 9001",
+  "CTC 9002",
+  "CTC 20",
+];
 
 export function TalhaoForm({
-  action,
-  fazendaId,
-  fazendaNome,
-  initial,
-  submitLabel = "Salvar talhão",
+  acao,
+  nomeFazenda,
+  inicial,
 }: {
-  action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
-  fazendaId: string;
-  fazendaNome: string;
-  initial?: { id: string; nome: string; tamanhoHectares: number; observacoes?: string | null };
-  submitLabel?: string;
+  acao: (prev: ActionState | undefined, formData: FormData) => Promise<ActionState>;
+  nomeFazenda: string;
+  inicial?: { nome: string; variedade: string; area: number; dataPlantio: string };
 }) {
-  const router = useRouter();
-  const [state, formAction, pending] = useActionState(action, {
-    success: false,
-  });
-
-  const [unit, setUnit] = useState<AreaUnit>("ha");
-  const [rawValue, setRawValue] = useState(
-    initial ? toInputString(initial.tamanhoHectares, 2) : ""
-  );
-
-  useEffect(() => {
-    if (state.success) {
-      toast.success("Talhão salvo com sucesso.");
-      router.push(state.redirectTo ?? `/fazendas/${fazendaId}`);
-    } else if (state.message) {
-      toast.error(state.message);
-    }
-  }, [state, router, fazendaId]);
-
-  const parsed = parseDecimal(rawValue);
-  const hectares =
-    parsed == null ? null : unit === "ha" ? parsed : tarefasToHa(parsed);
-  const tarefas = parsed == null ? null : unit === "tarefa" ? parsed : haToTarefas(parsed);
-
-  function switchUnit(next: AreaUnit) {
-    if (next === unit) return;
-    if (parsed != null) {
-      const valueInNext = next === "ha" ? tarefasToHa(parsed) : haToTarefas(parsed);
-      setRawValue(toInputString(valueInNext, 2));
-    }
-    setUnit(next);
-  }
+  const [state, acaoForm] = useActionState(acao, undefined);
 
   return (
-    <form action={formAction} className="space-y-5">
-      <input type="hidden" name="fazendaId" value={fazendaId} />
-      {initial?.id && <input type="hidden" name="id" value={initial.id} />}
-      <input type="hidden" name="tamanhoHectares" value={hectares == null ? "" : String(hectares)} />
+    <form action={acaoForm} className="grid gap-5 pb-4">
+      <AlertaFormulario mensagem={state && !state.ok ? state.error : undefined} />
 
-      <Field label="Fazenda" hint={fazendaNome}>
-        <input
-          type="text"
-          value={fazendaNome}
-          disabled
-          className="h-11 w-full rounded-lg border border-input bg-muted px-3 text-sm text-muted-foreground"
-        />
-      </Field>
+      <p className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink-2">
+        Fazenda: <span className="font-semibold text-ink">{nomeFazenda}</span>
+      </p>
 
-      <Field label="Nome do talhão">
-        <Input
-          name="nome"
-          autoFocus
-          required
-          maxLength={120}
-          defaultValue={initial?.nome ?? ""}
-          placeholder="Ex.: Talhão 01 ou Zona Norte"
-          className="h-11 text-base"
-        />
-      </Field>
-
-      <Field
-        label="Área do talhão"
-        hint="Digite em hectares (ha) ou em tarefas — a conversão é automática."
+      <Campo
+        label="Nome do talhão"
+        htmlFor="nome"
+        hint="Ex.: T-01, T-02… Use um identificador curto."
       >
-        <div className="flex flex-col gap-2">
-          <div
-            className="grid grid-cols-2 gap-1 rounded-lg border border-input bg-muted/60 p-1"
-            role="group"
-            aria-label="Unidade de área"
-          >
-            {AREA_UNITS.map((u) => (
-              <button
-                key={u}
-                type="button"
-                onClick={() => switchUnit(u)}
-                aria-pressed={unit === u}
-                className={cn(
-                  "h-9 rounded-md px-3 text-sm font-medium transition-colors",
-                  unit === u
-                    ? "bg-card text-foreground shadow-sm ring-1 ring-border"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {u === "ha" ? "Hectares (ha)" : "Tarefas"}
-              </button>
-            ))}
-          </div>
-
-          <SuffixedNumberInput
-            suffix={unit === "ha" ? "ha" : "tarefas"}
-            inputMode="decimal"
-            autoComplete="off"
-            enterKeyHint="next"
-            value={rawValue}
-            onChange={(e) => setRawValue(e.target.value)}
-            placeholder="0,00"
-          />
-
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-primary/50" />
-            {hectares != null && tarefas != null ? (
-              <span>
-                <span className="font-medium text-foreground">{formatHectares(hectares)} ha</span>
-                <span className="mx-1">=</span>
-                <span className="font-medium text-foreground">{formatTarefas(tarefas)} tarefas</span>
-                <span className="ml-1">(1 ha = 3,3 tarefas)</span>
-              </span>
-            ) : (
-              <span>1 ha = 3,3 tarefas</span>
-            )}
-          </div>
-        </div>
-      </Field>
-
-      <Field label="Observações / tarefas" hint="Anotações livres, tarefas e observações da área.">
-        <Textarea
-          name="observacoes"
-          maxLength={2000}
-          defaultValue={initial?.observacoes ?? ""}
-          placeholder="Ex.: reforma prevista, adubação de plantio, pragas observadas..."
-          className="min-h-28 resize-y text-[15px]"
+        <input
+          id="nome"
+          name="nome"
+          className="field-input"
+          defaultValue={inicial?.nome}
+          required
+          autoFocus
+          maxLength={20}
+          placeholder="Ex.: T-01"
         />
-      </Field>
+      </Campo>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="submit" disabled={pending} className="h-10 px-5">
-          {pending ? (
-            <Loader2Icon className="size-4 animate-spin" />
-          ) : initial?.id ? (
-            <SaveIcon className="size-4" />
-          ) : (
-            <PlusIcon className="size-4" />
-          )}
-          {submitLabel}
-        </Button>
+      <Campo label="Variedade de cana" htmlFor="variedade">
+        <input
+          id="variedade"
+          name="variedade"
+          className="field-input"
+          defaultValue={inicial?.variedade}
+          maxLength={40}
+          list="variedades"
+          placeholder="Ex.: RB 867515"
+        />
+        <datalist id="variedades">
+          {VARIEDADES.map((v) => (
+            <option key={v} value={v} />
+          ))}
+        </datalist>
+      </Campo>
+
+      <div className="grid grid-cols-[1fr_1fr] gap-4">
+        <Campo label="Área (ha)" htmlFor="area">
+          <input
+            id="area"
+            name="area"
+            className="field-input tnum"
+            defaultValue={inicial ? String(inicial.area).replace(".", ",") : undefined}
+            inputMode="decimal"
+            required
+            placeholder="Ex.: 42,5"
+          />
+        </Campo>
+        <Campo label="Data de plantio" htmlFor="dataPlantio">
+          <input
+            id="dataPlantio"
+            name="dataPlantio"
+            type="date"
+            className="field-input"
+            defaultValue={inicial?.dataPlantio}
+          />
+        </Campo>
+      </div>
+
+      <div className="flex justify-end">
+        <BotaoSubmit>{inicial ? "Salvar alterações" : "Cadastrar talhão"}</BotaoSubmit>
       </div>
     </form>
   );

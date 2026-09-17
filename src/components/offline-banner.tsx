@@ -1,7 +1,7 @@
 "use client";
 
 import { useOffline } from "next/offline";
-import { WifiOffIcon } from "lucide-react";
+import { WifiOff } from "lucide-react";
 
 export function OfflineBanner() {
   const isOffline = useOffline();
@@ -9,14 +9,12 @@ export function OfflineBanner() {
   if (!isOffline) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center px-4 pt-3">
-      <div
-        role="status"
-        className="pointer-events-auto flex items-center gap-2 rounded-full border border-dashed bg-popover/95 px-3.5 py-1.5 text-xs font-medium text-popover-foreground shadow-sm backdrop-blur"
-      >
-        <WifiOffIcon className="size-3.5 text-muted-foreground" />
-        Você está offline. As alterações serão aplicadas quando a conexão voltar.
-      </div>
+    <div
+      role="status"
+      className="flex items-center justify-center gap-2 border-b border-danger-strong/30 bg-danger-soft px-4 py-1.5 text-center text-xs font-medium text-danger-strong"
+    >
+      <WifiOff className="size-3.5 shrink-0" />
+      Modo offline — os registros pendentes serão enviados quando a conexão voltar.
     </div>
   );
 }

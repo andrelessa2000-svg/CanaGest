@@ -1,26 +1,33 @@
+import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+
 export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-  className,
+  icone: Icone,
+  titulo,
+  descricao,
+  ctaTexto,
+  ctaHref,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-  className?: string;
+  icone: LucideIcon;
+  titulo: string;
+  descricao: string;
+  ctaTexto?: string;
+  ctaHref?: string;
 }) {
   return (
-    <div
-      className={`mx-auto flex max-w-sm flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-12 text-center ${className ?? ""}`}
-    >
-      <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-        <Icon className="size-6" />
+    <div className="flex flex-col items-center gap-4 rounded-[10px] border border-dashed border-line-strong bg-surface/60 px-6 py-14 text-center">
+      <span className="grid size-12 place-items-center rounded-[10px] bg-accent-soft text-accent">
+        <Icone className="size-6" strokeWidth={1.8} />
+      </span>
+      <div className="grid gap-1">
+        <h2 className="font-display text-xl text-ink">{titulo}</h2>
+        <p className="max-w-sm text-sm leading-relaxed text-ink-2">{descricao}</p>
       </div>
-      <h3 className="font-heading text-base font-medium text-foreground">{title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      {action && <div className="mt-5">{action}</div>}
+      {ctaTexto && ctaHref && (
+        <Link href={ctaHref} className="btn btn-primary">
+          {ctaTexto}
+        </Link>
+      )}
     </div>
   );
 }

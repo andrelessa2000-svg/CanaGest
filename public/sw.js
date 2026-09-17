@@ -1,19 +1,23 @@
-const CACHE_NAME = "canagest-v1";
+const VERSION = "canagest-1";
+const CORE = `canagest-core-${VERSION}`;
+const PAGES = `canagest-pages-${VERSION}`;
 
-const PRECACHE_URLS = [
+const ASSETS = [
+  "/",
+  "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
   "/icon-maskable-512.png",
   "/apple-touch-icon.png",
-  "/manifest.webmanifest",
+  "/icon.svg",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+      .open(CORE)
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -23,56 +27,51 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-        )
+          keys
+            .filter((k) => !k.startsWith(CORE) && !k.startsWith(PAGES))
+            .map((k) => caches.delete(k)),
+        ),
       )
-      .then(() => self.clients.claim())
+      .then(() => self.clients.claim()),
   );
 });
 
-// Network-first for everything: always try the network first and, when available,
-// keep a copy in cache for offline fallback. This is safe in dev (no stale chunks)
-// and gives full offline support when the network is unreachable.
-function cacheable(request) {
-  const url = new URL(request.url);
-  if (request.method !== "GET") return false;
-  if (url.origin !== self.location.origin) return false;
-  const { pathname } = url;
-  return (
-    pathname === "/" ||
-    pathname === "/fazendas" ||
-    pathname === "/fazendas/nova" ||
-    pathname === "/colheitas/nova" ||
-    pathname.startsWith("/_next/static/") ||
-    pathname.startsWith("/icon-") ||
-    pathname.startsWith("/apple-touch-icon") ||
-    pathname === "/manifest.webmanifest"
-  );
-}
-
 self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+  const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (!cacheable(request)) return;
-
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() =>
-        caches.match(request).then((cached) => {
-          if (cached) return cached;
-          // For navigations, fall back to the cached shell when the exact page isn't cached.
-          if (request.mode === "navigate") return caches.match("/");
-          return Response.error();
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(PAGES).then((cache) => cache.put(event.request, copy));
+          return res;
         })
-      )
-  );
+        .catch(() =>
+          caches.match(event.request).then((r) => r || caches.match("/")),
+        ),
+    );
+    return;
+  }
+
+  if (event.request.destination === "document") return;
+
+  if (
+    url.pathname.startsWith("/_next/static/") ||
+    event.request.destination === "font" ||
+    event.request.destination === "image"
+  ) {
+    event.respondWith(
+      caches.match(event.request).then(
+        (cached) =>
+          cached ||
+          fetch(event.request).then((res) => {
+            const copy = res.clone();
+            caches.open(CORE).then((cache) => cache.put(event.request, copy));
+            return res;
+          }),
+      ),
+    );
+  }
 });

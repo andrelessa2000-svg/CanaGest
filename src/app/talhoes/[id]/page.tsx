@@ -1,117 +1,157 @@
 import Link from "next/link";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ChevronLeft, Pencil, Plus } from "lucide-react";
+import { prisma } from "@/lib/db";
 import {
-  ArrowRightIcon,
-  FlaskConicalIcon,
-  MapPinnedIcon,
-  PencilIcon,
-  Trash2Icon,
-} from "lucide-react";
-
-import { deleteTalhao } from "@/lib/actions";
-import { getTalhaoDetail } from "@/lib/queries";
-import { formatTarefas, haToTarefas } from "@/lib/area";
-import { formatHectares, formatNumber } from "@/lib/format";
+  fmtArea,
+  fmtCount,
+  fmtDate,
+  fmtProd,
+  fmtTons,
+} from "@/lib/format";
+import { tipoLabel } from "@/lib/validators";
+import { excluirTalhao } from "@/lib/actions";
 import { PageHeader } from "@/components/page-header";
-import { DeleteDialog } from "@/components/delete-dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatCard } from "@/components/stat-card";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { CelulaMetrica, GradeMetricas } from "@/components/stat-cells";
 
-type Params = Promise<{ id: string }>;
+export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+export default async function TalhaoPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const data = await getTalhaoDetail(id);
-  if (!data) return { title: "Talhão | CanaGest" };
-  return { title: `${data.talhao.nome} | CanaGest` };
-}
 
-export default async function TalhaoDetailPage({ params }: { params: Params }) {
-  const { id } = await params;
-  const data = await getTalhaoDetail(id);
-  if (!data) notFound();
+  const talhao = await prisma.talhao.findUnique({
+    where: { id },
+    include: {
+      fazenda: { select: { id: true, nome: true } },
+      colheitas: { orderBy: { data: "desc" } },
+    },
+  });
 
-  const { talhao } = data;
+  if (!talhao) notFound();
+
+  const colhido = talhao.colheitas.reduce((n, c) => n + c.toneladas, 0);
+  const prodMedia = colhido / talhao.areaHa;
+  const ultimaSoca = talhao.colheitas.find((c) => c.tipo !== "planta");
 
   return (
-    <div className="space-y-8">
+    <>
+      <Link
+        href={`/fazendas/${talhao.fazendaId}`}
+        className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ink-3 hover:text-ink"
+      >
+        <ChevronLeft className="size-4" /> {talhao.fazenda.nome}
+      </Link>
+
       <PageHeader
-        title={talhao.nome}
-        description={
-          <Link
-            href={`/fazendas/${talhao.fazenda.id}`}
-            transitionTypes={["nav-back"]}
-            className="inline-flex items-center gap-1 font-medium text-primary transition-colors hover:text-primary/80"
-          >
-            {talhao.fazenda.nome}
-            <ArrowRightIcon className="size-3.5" />
-          </Link>
-        }
-        icon={MapPinnedIcon}
-        backHref={`/fazendas/${talhao.fazenda.id}`}
-        actions={
+        rotulo="talhão · cadastro"
+        titulo={talhao.nome}
+        descricao={`${
+          talhao.variedade || "Variedade não informada"
+        }${talhao.dataPlantio ? ` · plantado em ${fmtDate(talhao.dataPlantio)}` : ""}`}
+        acao={
           <>
-            <DeleteDialog
-              title={`Excluir "${talhao.nome}"?`}
-              description="Esta ação não pode ser desfeita. As adubações e herbicidas que o utilizam serão ajustadas."
-              action={deleteTalhao}
-              id={talhao.id}
+            <Link
+              href={`/talhoes/${talhao.id}/editar`}
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-line text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
+              aria-label="Editar talhão"
             >
-              <Button variant="ghost" size="icon-sm" aria-label="Excluir talhão">
-                <Trash2Icon className="size-4" />
-              </Button>
-            </DeleteDialog>
-            <Button asChild className="h-9">
-              <Link href={`/talhoes/${talhao.id}/editar`} transitionTypes={["nav-forward"]}>
-                <PencilIcon className="size-4" />
-                Editar
-              </Link>
-            </Button>
+              <Pencil className="size-4" />
+            </Link>
+            <ConfirmDelete
+              action={excluirTalhao.bind(null, talhao.id)}
+              titulo="Excluir talhão?"
+              mensagem={` " ${talhao.nome} " e todas as suas colheitas serão apagados. Essa ação não pode ser desfeita.`}
+              verbo="Excluir"
+            />
+            <Link href={`/colheitas/nova?talhao=${talhao.id}`} className="btn btn-primary">
+              <Plus className="size-4" /> Nova colheita
+            </Link>
           </>
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={MapPinnedIcon} label="Tamanho" value={`${formatHectares(talhao.tamanhoHectares)} ha`} hint={`${formatTarefas(haToTarefas(talhao.tamanhoHectares))} tarefas`} />
-        <StatCard icon={FlaskConicalIcon} label="Área em tarefas" value={formatNumber(haToTarefas(talhao.tamanhoHectares), 1)} hint="1 ha = 3,3 tarefas" tone="neutral" />
-      </div>
+      <GradeMetricas>
+        <CelulaMetrica
+          rotulo="Área"
+          valor={fmtArea(talhao.areaHa)}
+          legenda="do talhão"
+        />
+        <CelulaMetrica
+          rotulo="Colheitas"
+          valor={fmtCount(talhao.colheitas.length)}
+          legenda="registros"
+        />
+        <CelulaMetrica
+          rotulo="Colhido total"
+          valor={fmtTons(colhido)}
+          legenda={
+            ultimaSoca
+              ? `última: ${tipoLabel(ultimaSoca.tipo).toLowerCase()}`
+              : "acumulado"
+          }
+        />
+        <CelulaMetrica
+          rotulo="Produtividade"
+          valor={fmtProd(prodMedia)}
+          legenda="média colhida"
+        />
+      </GradeMetricas>
 
-      {talhao.observacoes && (
-        <Card>
-          <CardContent>
-            <div className="flex items-start gap-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <FlaskConicalIcon className="size-4" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">Observações & tarefas</h2>
-                <p className="mt-1 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-                  {talhao.observacoes}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <section className="mt-10 grid gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-xl text-ink">Histórico de colheitas</h2>
+        </div>
 
-      <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Colheitas da fazenda</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              O lançamento de colheitas é feito por fazenda, não por talhão.
-            </p>
-          </div>
-          <Button asChild variant="secondary" className="h-9">
-            <Link href={`/fazendas/${talhao.fazenda.id}`} transitionTypes={["nav-forward"]}>
-              Ver colheitas de {talhao.fazenda.nome}
-              <ArrowRightIcon className="size-4" />
+        {talhao.colheitas.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-line-strong bg-surface/60 px-4 py-6 text-sm text-ink-2">
+            Nenhuma colheita registrada para este talhão.{" "}
+            <Link
+              href={`/colheitas/nova?talhao=${talhao.id}`}
+              className="font-semibold text-accent underline underline-offset-2"
+            >
+              Registrar a primeira
             </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+            .
+          </p>
+        ) : (
+          <ul className="divide-y divide-line rounded-[10px] border border-line bg-surface px-3">
+            {talhao.colheitas.map((c) => {
+              const prod = c.toneladas / talhao.areaHa;
+              return (
+                <li
+                  key={c.id}
+                  className="-mx-2 flex items-center justify-between gap-3 px-2 py-3"
+                >
+                  <span className="grid gap-0.5">
+                    <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
+                      {fmtDate(c.data)}
+                      <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-xs font-semibold text-ink-2">
+                        {tipoLabel(c.tipo)}
+                      </span>
+                    </span>
+                    {c.observacao && (
+                      <span className="text-xs text-ink-3">{c.observacao}</span>
+                    )}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span className="hidden text-xs text-ink-3 sm:block">
+                      {fmtProd(prod)}
+                    </span>
+                    <span className="tnum text-sm font-semibold text-ink">
+                      {fmtTons(c.toneladas)}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </>
   );
 }
