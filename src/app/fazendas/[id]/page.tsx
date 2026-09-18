@@ -6,7 +6,9 @@ import {
   fmtArea,
   fmtCount,
   fmtDateShort,
+  fmtHa,
   fmtProd,
+  fmtTarefas,
   fmtTons,
 } from "@/lib/format";
 import { tipoLabel } from "@/lib/validators";
@@ -66,7 +68,13 @@ export default async function FazendaPage({
       <PageHeader
         rotulo="fazenda"
         titulo={fazenda.nome}
-        descricao={[fazenda.cidade, fazenda.uf].filter(Boolean).join(" · ")}
+        descricao={
+          fazenda.talhoes.length > 0
+            ? `${fazenda.talhoes.length} ${
+                fazenda.talhoes.length === 1 ? "talhão" : "talhões"
+              } · ${fmtArea(areaPlantada)}`
+            : "Nenhum talhão cadastrado ainda."
+        }
         acao={
           <>
             <Link
@@ -97,8 +105,8 @@ export default async function FazendaPage({
         />
         <CelulaMetrica
           rotulo="Área plantada"
-          valor={fmtArea(areaPlantada)}
-          legenda={`de ${fmtArea(fazenda.areaTotalHa)} totais`}
+          valor={fmtHa(areaPlantada)}
+          legenda={`${fmtTarefas(areaPlantada)} somadas`}
         />
         <CelulaMetrica
           rotulo="Colhido"
@@ -119,7 +127,7 @@ export default async function FazendaPage({
           <EmptyState
             icone={Sprout}
             titulo="Nenhum talhão cadastrado"
-            descricao="Divida a fazenda em talhões para registrar a variedade, a área e as colheitas."
+            descricao="Divida a fazenda em talhões para registrar a área e as colheitas."
             ctaTexto="Cadastrar talhão"
             ctaHref={`/fazendas/${fazenda.id}/talhoes/novo`}
           />
@@ -139,12 +147,6 @@ export default async function FazendaPage({
                     }
                     secundario={
                       <>
-                        {t.variedade ? (
-                          <>
-                            <span>{t.variedade}</span>
-                            <span aria-hidden>·</span>
-                          </>
-                        ) : null}
                         <span>{fmtArea(t.areaHa)}</span>
                         {ultima && (
                           <>

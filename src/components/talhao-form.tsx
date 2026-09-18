@@ -1,20 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { ActionState } from "@/lib/actions";
+import {
+  fmtHa,
+  fmtTarefas,
+  parseDecimal,
+  tarefasParaHa,
+  UNIDADES_AREA,
+  type UnidadeArea,
+} from "@/lib/format";
 import { AlertaFormulario, BotaoSubmit, Campo } from "./forms";
-
-const VARIEDADES = [
-  "RB 867515",
-  "RB 966928",
-  "RB 72454",
-  "SP 80-1842",
-  "SP 81-3250",
-  "CTC 4",
-  "CTC 9001",
-  "CTC 9002",
-  "CTC 20",
-];
 
 export function TalhaoForm({
   acao,
@@ -23,9 +19,21 @@ export function TalhaoForm({
 }: {
   acao: (prev: ActionState | undefined, formData: FormData) => Promise<ActionState>;
   nomeFazenda: string;
-  inicial?: { nome: string; variedade: string; area: number; dataPlantio: string };
+  inicial?: { nome: string; areaHa: number };
 }) {
   const [state, acaoForm] = useActionState(acao, undefined);
+  const [area, setArea] = useState(
+    inicial ? String(inicial.areaHa).replace(".", ",") : "",
+  );
+  const [unidade, setUnidade] = useState<UnidadeArea>("ha");
+
+  const valor = parseDecimal(area);
+  const areaHa =
+    Number.isFinite(valor) && valor > 0
+      ? unidade === "tarefas"
+        ? tarefasParaHa(valor)
+        : valor
+      : null;
 
   return (
     <form action={acaoForm} className="grid gap-5 pb-4">
@@ -36,7 +44,7 @@ export function TalhaoForm({
       </p>
 
       <Campo
-        label="Nome do talhão"
+        label="Identificação do talhão"
         htmlFor="nome"
         hint="Ex.: T-01, T-02… Use um identificador curto."
       >
@@ -52,43 +60,41 @@ export function TalhaoForm({
         />
       </Campo>
 
-      <Campo label="Variedade de cana" htmlFor="variedade">
-        <input
-          id="variedade"
-          name="variedade"
-          className="field-input"
-          defaultValue={inicial?.variedade}
-          maxLength={40}
-          list="variedades"
-          placeholder="Ex.: RB 867515"
-        />
-        <datalist id="variedades">
-          {VARIEDADES.map((v) => (
-            <option key={v} value={v} />
-          ))}
-        </datalist>
-      </Campo>
-
-      <div className="grid grid-cols-[1fr_1fr] gap-4">
-        <Campo label="Área (ha)" htmlFor="area">
+      <div className="grid grid-cols-[1fr_9rem] gap-4">
+        <Campo
+          label="Área"
+          htmlFor="area"
+          hint={
+            areaHa
+              ? `${fmtHa(areaHa)} · ${fmtTarefas(areaHa)}`
+              : "1 ha = 3,3 tarefas. Aceita vírgula."
+          }
+        >
           <input
             id="area"
             name="area"
             className="field-input tnum"
-            defaultValue={inicial ? String(inicial.area).replace(".", ",") : undefined}
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
             inputMode="decimal"
             required
-            placeholder="Ex.: 42,5"
+            placeholder={unidade === "ha" ? "Ex.: 42,5" : "Ex.: 140"}
           />
         </Campo>
-        <Campo label="Data de plantio" htmlFor="dataPlantio">
-          <input
-            id="dataPlantio"
-            name="dataPlantio"
-            type="date"
+        <Campo label="Unidade" htmlFor="unidade">
+          <select
+            id="unidade"
+            name="unidade"
             className="field-input"
-            defaultValue={inicial?.dataPlantio}
-          />
+            value={unidade}
+            onChange={(e) => setUnidade(e.target.value as UnidadeArea)}
+          >
+            {UNIDADES_AREA.map((u) => (
+              <option key={u} value={u}>
+                {u === "ha" ? "Hectares" : "Tarefas"}
+              </option>
+            ))}
+          </select>
         </Campo>
       </div>
 

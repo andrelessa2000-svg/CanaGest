@@ -29,9 +29,6 @@ export async function criarFazenda(
 ): Promise<ActionState> {
   const parsed = fazendaSchema.safeParse({
     nome: campo(formData, "nome"),
-    cidade: campo(formData, "cidade"),
-    uf: campo(formData, "uf"),
-    areaTotalHa: campo(formData, "area"),
   });
 
   if (!parsed.success) {
@@ -42,9 +39,6 @@ export async function criarFazenda(
     await prisma.fazenda.create({
       data: {
         nome: parsed.data.nome,
-        cidade: parsed.data.cidade,
-        uf: parsed.data.uf?.toUpperCase(),
-        areaTotalHa: parsed.data.areaTotalHa,
       },
     });
   } catch (e) {
@@ -64,9 +58,6 @@ export async function atualizarFazenda(
 ): Promise<ActionState> {
   const parsed = fazendaSchema.safeParse({
     nome: campo(formData, "nome"),
-    cidade: campo(formData, "cidade"),
-    uf: campo(formData, "uf"),
-    areaTotalHa: campo(formData, "area"),
   });
 
   if (!parsed.success) {
@@ -78,9 +69,6 @@ export async function atualizarFazenda(
       where: { id },
       data: {
         nome: parsed.data.nome,
-        cidade: parsed.data.cidade,
-        uf: parsed.data.uf?.toUpperCase(),
-        areaTotalHa: parsed.data.areaTotalHa,
       },
     });
   } catch (e) {
@@ -114,9 +102,8 @@ export async function criarTalhao(
   const parsed = talhaoSchema.safeParse({
     fazendaId,
     nome: campo(formData, "nome"),
-    variedade: campo(formData, "variedade"),
-    areaHa: campo(formData, "area"),
-    dataPlantio: campo(formData, "dataPlantio"),
+    area: campo(formData, "area"),
+    unidade: campo(formData, "unidade"),
   });
 
   if (!parsed.success) {
@@ -129,11 +116,7 @@ export async function criarTalhao(
       data: {
         fazendaId,
         nome: parsed.data.nome,
-        variedade: parsed.data.variedade,
         areaHa: parsed.data.areaHa,
-        dataPlantio: parsed.data.dataPlantio
-          ? new Date(parsed.data.dataPlantio)
-          : undefined,
       },
     });
     talhaoId = talhao.id;
@@ -161,9 +144,8 @@ export async function atualizarTalhao(
   const parsed = talhaoSchema.safeParse({
     fazendaId: original.fazendaId,
     nome: campo(formData, "nome"),
-    variedade: campo(formData, "variedade"),
-    areaHa: campo(formData, "area"),
-    dataPlantio: campo(formData, "dataPlantio"),
+    area: campo(formData, "area"),
+    unidade: campo(formData, "unidade"),
   });
 
   if (!parsed.success) {
@@ -175,11 +157,7 @@ export async function atualizarTalhao(
       where: { id },
       data: {
         nome: parsed.data.nome,
-        variedade: parsed.data.variedade,
         areaHa: parsed.data.areaHa,
-        dataPlantio: parsed.data.dataPlantio
-          ? new Date(parsed.data.dataPlantio)
-          : null,
       },
     });
   } catch (e) {

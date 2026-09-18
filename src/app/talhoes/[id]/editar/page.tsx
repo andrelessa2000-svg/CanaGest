@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { atualizarTalhao } from "@/lib/actions";
-import { toDateInputValue } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { TalhaoForm } from "@/components/talhao-form";
 
@@ -40,11 +39,7 @@ export default async function EditarTalhaoPage({
           nomeFazenda={talhao.fazenda.nome}
           inicial={{
             nome: talhao.nome,
-            variedade: talhao.variedade ?? "",
-            area: talhao.areaHa,
-            dataPlantio: talhao.dataPlantio
-              ? toDateInputValue(talhao.dataPlantio)
-              : "",
+            areaHa: talhao.areaHa,
           }}
         />
       </div>

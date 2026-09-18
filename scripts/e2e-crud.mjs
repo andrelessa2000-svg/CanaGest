@@ -20,9 +20,6 @@ const naoEhNovo = (u) =>
     passos.push("1. Nova fazenda");
     await page.goto(`${BASE}/fazendas/nova`, { waitUntil: "networkidle" });
     await page.fill('input[name="nome"]', NOME_FAZENDA);
-    await page.fill('input[name="cidade"]', "Morro Agudo");
-    await page.fill('input[name="uf"]', "SP");
-    await page.fill('input[name="area"]', "150,5");
     await page.click('button[type="submit"]');
     await page.waitForURL("**/fazendas", { timeout: 20000 });
     await page.getByText(NOME_FAZENDA, { exact: false }).first().waitFor({ timeout: 15000 });
@@ -37,12 +34,14 @@ const naoEhNovo = (u) =>
     await page.getByRole("link", { name: /Novo talhão/ }).click();
     await page.waitForURL("**/talhoes/novo", { timeout: 15000 });
     await page.fill('input[name="nome"]', NOME_TALHAO);
-    await page.fill('input[name="variedade"]', "RB 867515");
-    await page.fill('input[name="area"]', "25,75");
+    await page.fill('input[name="area"]', "99");
+    await page.selectOption('select[name="unidade"]', "tarefas");
     await page.click('button[type="submit"]');
     await page.waitForURL(naoEhNovo, { timeout: 20000 });
     await page.getByRole("heading", { name: NOME_TALHAO }).waitFor({ timeout: 15000 });
-    passos.push("Talhão criado, página de detalhe aberta");
+    await page.getByText(/30 ha/).first().waitFor({ timeout: 15000 });
+    await page.getByText(/99 tarefas/).first().waitFor({ timeout: 15000 });
+    passos.push("Talhão criado (99 tarefas = 30 ha), página de detalhe aberta");
 
     passos.push("4. Registrar colheita");
     await page.getByRole("link", { name: /Nova colheita/ }).click();

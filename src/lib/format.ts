@@ -11,11 +11,34 @@ export function parseDecimal(input: string): number {
   return Number(t);
 }
 
+export const TAREFAS_POR_HA = 3.3;
+
+export const UNIDADES_AREA = ["ha", "tarefas"] as const;
+export type UnidadeArea = (typeof UNIDADES_AREA)[number];
+
+export function haParaTarefas(ha: number): number {
+  return ha * TAREFAS_POR_HA;
+}
+
+export function tarefasParaHa(tarefas: number): number {
+  return tarefas / TAREFAS_POR_HA;
+}
+
+const nfArea = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
+export function fmtHa(ha: number): string {
+  return `${nfArea.format(ha)} ha`;
+}
+
+export function fmtTarefas(ha: number): string {
+  return `${nfArea.format(haParaTarefas(ha))} tarefas`;
+}
+
 export function fmtArea(ha: number): string {
-  return `${new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
-  }).format(ha)} ha`;
+  return `${fmtHa(ha)} · ${fmtTarefas(ha)}`;
 }
 
 export function fmtTons(t: number): string {

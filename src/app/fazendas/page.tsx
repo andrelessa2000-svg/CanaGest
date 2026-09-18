@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, Sprout } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { fmtArea, fmtCount } from "@/lib/format";
+import { fmtCount, fmtHa, fmtTarefas } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { LinhaLink } from "@/components/stat-cells";
@@ -43,28 +43,31 @@ export default async function FazendasPage() {
       ) : (
         <div className="grid gap-3">
           <ul className="divide-y divide-line rounded-[10px] border border-line bg-surface px-3">
-            {fazendas.map((f) => (
-              <LinhaLink
-                key={f.id}
-                href={`/fazendas/${f.id}`}
-                principal={f.nome}
-                secundario={
-                  <>
-                    <span>{[f.cidade, f.uf].filter(Boolean).join(" · ")}</span>
-                    <span aria-hidden>·</span>
-                    <span>
-                      {f.talhoes.length}
-                      {f.talhoes.length === 1 ? " talhão" : " talhões"}
-                    </span>
-                  </>
-                }
-                destaque={fmtArea(f.areaTotalHa)}
-              />
-            ))}
+            {fazendas.map((f) => {
+              const area = f.talhoes.reduce((a, t) => a + t.areaHa, 0);
+              return (
+                <LinhaLink
+                  key={f.id}
+                  href={`/fazendas/${f.id}`}
+                  principal={f.nome}
+                  secundario={
+                    <>
+                      <span>
+                        {f.talhoes.length}
+                        {f.talhoes.length === 1 ? " talhão" : " talhões"}
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span>{fmtTarefas(area)}</span>
+                    </>
+                  }
+                  destaque={fmtHa(area)}
+                />
+              );
+            })}
           </ul>
           <p className="px-1 text-xs text-ink-3">
-            {fmtCount(fazendas.length)} fazendas ·{" "}
-            {fmtArea(areaColhivel)} total em talhões
+            {fmtCount(fazendas.length)} fazendas · {fmtHa(areaColhivel)} em talhões (
+            {fmtTarefas(areaColhivel)})
           </p>
         </div>
       )}

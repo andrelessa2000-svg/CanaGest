@@ -6,7 +6,9 @@ import {
   fmtArea,
   fmtCount,
   fmtDate,
+  fmtHa,
   fmtProd,
+  fmtTarefas,
   fmtTons,
 } from "@/lib/format";
 import { tipoLabel } from "@/lib/validators";
@@ -50,9 +52,7 @@ export default async function TalhaoPage({
       <PageHeader
         rotulo="talhão · cadastro"
         titulo={talhao.nome}
-        descricao={`${
-          talhao.variedade || "Variedade não informada"
-        }${talhao.dataPlantio ? ` · plantado em ${fmtDate(talhao.dataPlantio)}` : ""}`}
+        descricao={fmtArea(talhao.areaHa)}
         acao={
           <>
             <Link
@@ -78,8 +78,8 @@ export default async function TalhaoPage({
       <GradeMetricas>
         <CelulaMetrica
           rotulo="Área"
-          valor={fmtArea(talhao.areaHa)}
-          legenda="do talhão"
+          valor={fmtHa(talhao.areaHa)}
+          legenda={`${fmtTarefas(talhao.areaHa)}`}
         />
         <CelulaMetrica
           rotulo="Colheitas"

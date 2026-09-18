@@ -2,10 +2,11 @@ import Link from "next/link";
 import { ArrowRight, Sprout } from "lucide-react";
 import { prisma } from "@/lib/db";
 import {
-  fmtArea,
   fmtCount,
   fmtDateShort,
+  fmtHa,
   fmtProd,
+  fmtTarefas,
   fmtTons,
 } from "@/lib/format";
 import { tipoLabel } from "@/lib/validators";
@@ -30,7 +31,10 @@ export default async function DashboardPage() {
   ]);
 
   const numTalhoes = fazendas.reduce((n, f) => n + f.talhoes.length, 0);
-  const areaTotal = fazendas.reduce((n, f) => n + f.areaTotalHa, 0);
+  const areaTotal = fazendas.reduce(
+    (n, f) => n + f.talhoes.reduce((a, t) => a + t.areaHa, 0),
+    0,
+  );
   const colhido = totalColhido._sum.toneladas ?? 0;
 
   if (fazendas.length === 0) {
@@ -73,8 +77,8 @@ export default async function DashboardPage() {
         />
         <CelulaMetrica
           rotulo="Área total"
-          valor={fmtArea(areaTotal)}
-          legenda="cadastrada"
+          valor={fmtHa(areaTotal)}
+          legenda={`${fmtTarefas(areaTotal)} somadas`}
         />
         <CelulaMetrica
           rotulo="Colhido total"
@@ -142,23 +146,26 @@ export default async function DashboardPage() {
           </div>
 
           <ul className="divide-y divide-line rounded-[10px] border border-line bg-surface px-3">
-            {fazendas.map((f) => (
-              <LinhaLink
-                key={f.id}
-                href={`/fazendas/${f.id}`}
-                principal={f.nome}
-                secundario={
-                  <>
-                    <span>{[f.cidade, f.uf].filter(Boolean).join(" · ")}</span>
-                    <span aria-hidden>·</span>
-                    <span>
-                      {f.talhoes.length} {f.talhoes.length === 1 ? "talhão" : "talhões"}
-                    </span>
-                  </>
-                }
-                destaque={fmtArea(f.areaTotalHa)}
-              />
-            ))}
+            {fazendas.map((f) => {
+              const area = f.talhoes.reduce((a, t) => a + t.areaHa, 0);
+              return (
+                <LinhaLink
+                  key={f.id}
+                  href={`/fazendas/${f.id}`}
+                  principal={f.nome}
+                  secundario={
+                    <>
+                      <span>
+                        {f.talhoes.length} {f.talhoes.length === 1 ? "talhão" : "talhões"}
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span>{fmtTarefas(area)}</span>
+                    </>
+                  }
+                  destaque={fmtHa(area)}
+                />
+              );
+            })}
           </ul>
         </section>
       </div>

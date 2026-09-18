@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseDecimal } from "./format";
+import { parseDecimal, tarefasParaHa, UNIDADES_AREA } from "./format";
 
 const TIPOS = ["planta", "soca", "ressoca"] as const;
 export type TipoColheita = (typeof TIPOS)[number];
@@ -29,18 +29,20 @@ export function tipoLabel(tipo: string): string {
 
 export const fazendaSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome da fazenda").max(80),
-  cidade: optionalField(60),
-  uf: optionalField(2),
-  areaTotalHa: numField("Área total"),
 });
 
-export const talhaoSchema = z.object({
-  fazendaId: z.string().min(1, "Selecione a fazenda"),
-  nome: z.string().trim().min(1, "Informe o nome do talhão").max(20),
-  variedade: optionalField(40),
-  areaHa: numField("Área do talhão"),
-  dataPlantio: z.string().optional(),
-});
+export const talhaoSchema = z
+  .object({
+    fazendaId: z.string().min(1, "Selecione a fazenda"),
+    nome: z.string().trim().min(1, "Informe o nome do talhão").max(20),
+    area: numField("Área do talhão"),
+    unidade: z.enum(UNIDADES_AREA, { error: "Selecione a unidade da área" }),
+  })
+  .transform((d) => ({
+    fazendaId: d.fazendaId,
+    nome: d.nome,
+    areaHa: d.unidade === "tarefas" ? tarefasParaHa(d.area) : d.area,
+  }));
 
 export const colheitaSchema = z.object({
   talhaoId: z.string().min(1, "Selecione o talhão"),

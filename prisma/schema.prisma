@@ -10,9 +10,6 @@ datasource db {
 model Fazenda {
   id          String    @id @default(cuid())
   nome        String
-  cidade      String?
-  uf          String?
-  areaTotalHa Float
   criadaEm    DateTime  @default(now())
   atualizadaEm DateTime @updatedAt
   talhoes     Talhao[]
@@ -25,9 +22,7 @@ model Talhao {
   fazendaId  String
   fazenda    Fazenda  @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
   nome       String
-  variedade  String?
   areaHa     Float
-  dataPlantio DateTime?
   criadoEm   DateTime @default(now())
   colheitas  Colheita[]
 

@@ -11,10 +11,10 @@ Gestão de fazendas de cana-de-açúcar: cadastro de **fazendas**, divisão em *
 
 ## Funcionalidades
 
-- Fazendas: nome, cidade/UF e área total (ha).
-- Talhões: identificador (ex.: T-01), variedade de cana, área e data de plantio.
+- Fazendas: nome. A área total é calculada automaticamente pela soma dos talhões.
+- Talhões: identificação (ex.: T-01) e área informada em hectares ou tarefas (1 ha = 3,3 tarefas), exibida nas duas unidades.
 - Colheitas: data, tipo de corte (planta/soca/ressoca), toneladas e observações.
-- Painel com resumo da safra: fazendas, talhões, área e total colhido.
+- Painel com resumo da safra: fazendas, talhões, área (ha e tarefas) e total colhido.
 - Produtividade calculada (t/ha) por talhão e por fazenda.
 - PWA instalável com suporte offline: cache de navegação e recursos estáticos.
 

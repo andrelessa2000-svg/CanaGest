@@ -10,31 +10,23 @@ if (!connectionString) {
 const adapter = new PrismaNeon({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
-const variedades = ["CTC 9001", "CTC 9002", "RB 867515", "SP 80-1842", "RB 966928"];
 const tipos = ["planta", "soca", "ressoca"];
 
 function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function randPick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
 async function main() {
   const fazendas = [
-    { nome: "Fazenda Boa Vista", cidade: "Morro Agudo", uf: "SP", areaTotalHa: 640 },
-    { nome: "Fazenda Santa Clara", cidade: "Incrubatão", uf: "MG", areaTotalHa: 385 },
-    { nome: "Fazenda São José", cidade: "Barrinha", uf: "SP", areaTotalHa: 512 },
+    { nome: "Fazenda Boa Vista" },
+    { nome: "Fazenda Santa Clara" },
+    { nome: "Fazenda São José" },
   ];
 
   for (const def of fazendas) {
     const fazenda = await prisma.fazenda.create({
       data: {
         nome: def.nome,
-        cidade: def.cidade,
-        uf: def.uf,
-        areaTotalHa: def.areaTotalHa,
       },
     });
 
@@ -45,9 +37,7 @@ async function main() {
         data: {
           fazendaId: fazenda.id,
           nome: `T-${String(t).padStart(2, "0")}`,
-          variedade: randPick(variedades),
           areaHa,
-          dataPlantio: new Date(Date.now() - randInt(500, 1200) * 24 * 60 * 60 * 1000),
         },
       });
 
